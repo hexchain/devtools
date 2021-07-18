@@ -196,7 +196,22 @@ for fname in "${installed[@]}"; do
         exit 1
     fi
 done
-printf '%s\n' "${allpkgfiles[@]}" | mkarchroot -M @pkgdatadir@/makepkg-x86_64.conf -U "${archroot_args[@]}" "${buildroot}"/root - || exit 1
+
+trap 'rm -rf $TEMPDIR' EXIT INT TERM QUIT
+TEMPDIR=$(mktemp -d --tmpdir makerepropkg.XXXXXXXXXX)
+
+makepkg_conf=@pkgdatadir@/makepkg-x86_64.conf
+if [[ "${BUILDTOOL}" = devtools ]]; then
+    fname=${BUILDTOOL}-${BUILDTOOLVER}
+    if ! buildtool_file=$(get_pkgfile "${fname}"); then
+        error "failed to retrieve ${fname}"
+        exit 1
+    fi
+    msg2 "using makepkg.conf from ${fname}"
+    makepkg_conf="${TEMPDIR}/makepkg.conf"
+    bsdtar xOqf "${buildtool_file/file:\/\//}" usr/share/devtools/makepkg-x86_64.conf > "${makepkg_conf}"
+fi
+printf '%s\n' "${allpkgfiles[@]}" | mkarchroot -M "${makepkg_conf}" -U "${archroot_args[@]}" "${buildroot}"/root - || exit 1
 
 # use makechrootpkg to prep the build directory
 makechrootpkg -r "${buildroot}" -l "${chroot}" -- --packagelist || exit 1
