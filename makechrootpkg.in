@@ -416,7 +416,7 @@ else
 		done
 
 		msg2 "Checking packages"
-		sudo -u "$makepkg_user" checkpkg --rmdir --warn "${remotepkgs[@]/#file:\/\//}"
+		sudo -u "$makepkg_user" env CARCH="$(. $copydir/etc/makepkg.conf; echo $CARCH)" checkpkg --rmdir --warn "${remotepkgs[@]/#file:\/\//}"
 	fi
 	true
 fi
